@@ -1,0 +1,16 @@
+.terraform/
+.terraform.lock.hcl
+
+# Ignore all state files (they live safely in our S3 bucket!)
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Ignore local keys and secrets
+*.pem
+*.key
+*.pub
+
+# Ignore Python cache
+__pycache__/
+*.pyc
