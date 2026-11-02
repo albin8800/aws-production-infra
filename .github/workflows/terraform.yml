@@ -1,0 +1,54 @@
+name: "Terraform GitOps Pipeline"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    name: "Terraform CI/CD"
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Clone the code onto GitHub's cloud runner
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Authenticate to AWS using your GitHub Secrets
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # Step 3: Install Terraform on GitHub's cloud runner
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      # Step 4: Check code formatting (fails if code is messy)
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
+      # Step 5: Connect to your remote S3 & DynamoDB state vault
+      - name: Terraform Init
+        run: terraform init
+
+      # Step 6: Validate the syntax
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Step 7: Run terraform plan (Runs on both PRs and Main)
+      - name: Terraform Plan 
+        run: terraform plan -no-color
+
+      # Step 8: Apply changes ONLY when merged to the 'main' branch 
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve
